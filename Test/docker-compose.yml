@@ -1,0 +1,49 @@
+#version: "3.9"
+
+services:
+  backend:
+    build: ./Backend
+    container_name: ventasback_test
+    command: >
+      sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    volumes:
+      - ./Backend:/app
+    ports:
+      - "8383:8000"
+    env_file:
+      - .env
+    depends_on:
+      - db
+    restart: always
+
+  db:
+    image: postgres:15
+    container_name: ventasdb_test
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5440:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./DB/DB.sql:/docker-entrypoint-initdb.d/DB.sql
+
+
+  frontend:
+    build: ./Frontend
+    container_name: ventasfront_test
+    volumes:
+      - ./Frontend:/app
+      - /app/node_modules
+    ports:
+      - "3003:3000"
+    stdin_open: true
+    tty: true
+    command: npm start -- --host 0.0.0.0
+    restart: always
+
+
+volumes:
+  postgres_data:
